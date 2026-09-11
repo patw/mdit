@@ -37,6 +37,21 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+      - name: Dump the test log if anything failed
+        if: failure()
+        shell: bash
+        run: |
+          echo "=== build/Testing/Temporary/LastTest.log ==="
+          cat build/Testing/Temporary/LastTest.log 2>/dev/null | tail -200 || true
+          echo "=== failing test binaries, run verbosely ==="
+          for t in build/tests/test_*; do
+            [ -x "$t" ] || continue
+            case "$t" in *.pdb|*.ilk) continue;; esac
+            QT_QPA_PLATFORM=offscreen "$t" 2>&1 | tail -5 | grep -q "Totals: .*0 failed" && continue
+            echo "--- $t ---"
+            QT_QPA_PLATFORM=offscreen "$t" 2>&1 | tail -40 || true
+          done
+
       - name: Smoke test the binary
         run: |
           ./build/mdit --version
@@ -63,6 +78,21 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+      - name: Dump the test log if anything failed
+        if: failure()
+        shell: bash
+        run: |
+          echo "=== build/Testing/Temporary/LastTest.log ==="
+          cat build/Testing/Temporary/LastTest.log 2>/dev/null | tail -200 || true
+          echo "=== failing test binaries, run verbosely ==="
+          for t in build/tests/test_*; do
+            [ -x "$t" ] || continue
+            case "$t" in *.pdb|*.ilk) continue;; esac
+            QT_QPA_PLATFORM=offscreen "$t" 2>&1 | tail -5 | grep -q "Totals: .*0 failed" && continue
+            echo "--- $t ---"
+            QT_QPA_PLATFORM=offscreen "$t" 2>&1 | tail -40 || true
+          done
 
   windows:
     name: Windows (build + tests)
@@ -94,3 +124,18 @@ jobs:
       - name: Test
         shell: cmd
         run: ctest --test-dir build --output-on-failure
+
+      - name: Dump the test log if anything failed
+        if: failure()
+        shell: bash
+        run: |
+          echo "=== build/Testing/Temporary/LastTest.log ==="
+          cat build/Testing/Temporary/LastTest.log 2>/dev/null | tail -200 || true
+          echo "=== failing test binaries, run verbosely ==="
+          for t in build/tests/test_*; do
+            [ -x "$t" ] || continue
+            case "$t" in *.pdb|*.ilk) continue;; esac
+            QT_QPA_PLATFORM=offscreen "$t" 2>&1 | tail -5 | grep -q "Totals: .*0 failed" && continue
+            echo "--- $t ---"
+            QT_QPA_PLATFORM=offscreen "$t" 2>&1 | tail -40 || true
+          done

@@ -78,14 +78,6 @@ QString fileContents(const QString &path)
     return QString::fromUtf8(f.readAll());
 }
 
-QAction *actionWithShortcut(QWidget &w, const QKeySequence &seq)
-{
-    for (QAction *a : w.findChildren<QAction *>())
-        if (a->shortcut() == seq)
-            return a;
-    return nullptr;
-}
-
 } // namespace
 
 class TestCloseGuard : public QObject
@@ -220,8 +212,10 @@ void TestCloseGuard::exitActionRunsTheSameGuard()
     w.show();
     typeAtEnd(*w.editorPane(), QStringLiteral("x\n"));
 
-    QAction *exit = actionWithShortcut(w, QKeySequence(QKeySequence::Quit));
-    QVERIFY2(exit != nullptr, "no File > Exit action with Ctrl+Q");
+    // By objectName: QKeySequence::Quit is empty on some platforms (a bare CI
+    // runner), and a shortcut lookup would then match any shortcut-less action.
+    QAction *exit = w.findChild<QAction *>(QStringLiteral("action.exit"));
+    QVERIFY2(exit != nullptr, "no File > Exit action");
 
     w.answer = MainWindow::DiscardChoice::Cancel;
     exit->trigger();

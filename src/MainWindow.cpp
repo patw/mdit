@@ -87,12 +87,21 @@ void MainWindow::buildUi()
     // editor's search helpers. Ctrl+F / Ctrl+H (Edit menu) show it.
     m_findBar = new FindBar(m_editor, this);
 
+    // Every action the tests/automation need to reach gets a stable
+    // objectName (text and platform key sequences differ per platform: on a bare
+    // CI runner QKeySequence::Quit is empty, which made a shortcut-based lookup
+    // grab the wrong action).
     // --- Menu bar. -----------------------------------------------------------
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
+    fileMenu->setObjectName(QStringLiteral("menu.file"));
     m_newAct = fileMenu->addAction(tr("&New"), QKeySequence::New);
+    m_newAct->setObjectName(QStringLiteral("action.new"));
     m_openAct = fileMenu->addAction(tr("&Open..."), QKeySequence::Open);
+    m_openAct->setObjectName(QStringLiteral("action.open"));
     m_saveAct = fileMenu->addAction(tr("&Save"), QKeySequence::Save);
+    m_saveAct->setObjectName(QStringLiteral("action.save"));
     m_saveAsAct = fileMenu->addAction(tr("Save &As..."), QKeySequence::SaveAs);
+    m_saveAsAct->setObjectName(QStringLiteral("action.saveAs"));
     QMenu *exportMenu = fileMenu->addMenu(tr("&Export"));
     m_exportHtmlAct = exportMenu->addAction(tr("Export &HTML..."));
     m_exportPdfAct = exportMenu->addAction(tr("Export &PDF..."));
@@ -103,8 +112,10 @@ void MainWindow::buildUi()
     m_recentMenu = fileMenu->addMenu(tr("Recent &Files"));
     fileMenu->addSeparator();
     m_exitAct = fileMenu->addAction(tr("E&xit"), QKeySequence::Quit);
+    m_exitAct->setObjectName(QStringLiteral("action.exit"));
 
     QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
+    editMenu->setObjectName(QStringLiteral("menu.edit"));
     // Undo / Redo (Ctrl+Z / Ctrl+Shift+Z, + Ctrl+Y). The actions are parented to
     // the EDITOR and shortcut-scoped to it, so the keys only reach the document
     // while the editor has focus (the find bar's fields keep their own native
@@ -119,9 +130,12 @@ void MainWindow::buildUi()
     editMenu->addAction(m_redoAct);
     editMenu->addSeparator();
     m_findAct = editMenu->addAction(tr("&Find..."), QKeySequence::Find);
+    m_findAct->setObjectName(QStringLiteral("action.find"));
     m_replaceAct = editMenu->addAction(tr("&Replace..."), QKeySequence(Qt::CTRL | Qt::Key_H));
+    m_replaceAct->setObjectName(QStringLiteral("action.replace"));
 
     QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
+    viewMenu->setObjectName(QStringLiteral("menu.view"));
     m_previewToggleAct = viewMenu->addAction(tr("&Preview"));
     m_previewToggleAct->setCheckable(true);
     m_previewToggleAct->setChecked(true);
@@ -198,7 +212,9 @@ void MainWindow::buildUi()
     updateThemeButton();
 
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
+    helpMenu->setObjectName(QStringLiteral("menu.help"));
     m_aboutAct = helpMenu->addAction(tr("&About mdit"));
+    m_aboutAct->setObjectName(QStringLiteral("action.about"));
 
     // --- Menu bar only: no toolbar. -----------------------------------------
     // The app has exactly ONE row of chrome — the standard File/Edit/View/Help

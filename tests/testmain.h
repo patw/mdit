@@ -38,9 +38,13 @@ inline void isolateUserSettings()
     Q_ASSERT(dir.isValid());
     // Belt and braces: redirect the Qt settings path table (verified to work on
     // this Qt) and XDG_CONFIG_HOME for anything else that reads it.
+    // NativeFormat is a plist on macOS and the registry on Windows — neither
+    // honours setPath, so make IniFormat the DEFAULT too: QSettings(org, app)
+    // (what MainWindow uses) then writes an ini file inside the temp dir on
+    // every platform.
     QSettings::setPath(QSettings::NativeFormat, QSettings::UserScope, dir.path());
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, dir.path());
-    QSettings::setDefaultFormat(QSettings::NativeFormat);
+    QSettings::setDefaultFormat(QSettings::IniFormat);
     isolatedConfigHomeRef() = dir.path();
 }
 

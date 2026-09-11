@@ -114,7 +114,9 @@ void TestSmoke::openFileLoadsTextAndNormalizes()
     const QString path = dir.filePath(QStringLiteral("notes.md"));
     {
         QFile f(path);
-        QVERIFY(f.open(QIODevice::WriteOnly | QIODevice::Text));
+        // Binary: QIODevice::Text translates \n -> \r\n on Windows, which would
+        // turn the fixture's CRLF into CR CR LF and break the expectation.
+        QVERIFY(f.open(QIODevice::WriteOnly));
         f.write("# Title\r\n\r\nsome **bold** text\r\n");
     }
 
