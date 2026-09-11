@@ -38,7 +38,7 @@ APP="$ROOT/build_macos/mdit.app"
 
 # ── 2. Smoke test (the bundle's binary runs and reports its version) ────────
 echo "==> Smoke testing the bundle..."
-"$APP/Contents/MacOS/mdit" --version
+QT_QPA_PLATFORM=offscreen "$APP/Contents/MacOS/mdit" --version
 
 # ── 3. Icon: PNG -> .iconset -> .icns (generated, never committed) ──────────
 echo "==> Generating the .icns from assets/icons/..."

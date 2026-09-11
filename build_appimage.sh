@@ -39,7 +39,7 @@ echo "==> Building mdit..."
 BUILD_DIR="$ROOT/build_package"   # shared with build_deb.sh (never ./build)
 cmake -S "$ROOT" -B "$BUILD_DIR" -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
 cmake --build "$BUILD_DIR" --parallel "$BUILD_JOBS"
-"$BUILD_DIR/mdit" --version
+QT_QPA_PLATFORM=offscreen "$BUILD_DIR/mdit" --version
 
 # ── 2. Assemble the AppDir from `cmake --install` (same payload as the .deb) ─
 echo "==> Assembling the AppDir..."
@@ -48,7 +48,7 @@ mkdir -p "$APPDIR"
 cmake --install "$BUILD_DIR" --prefix "$APPDIR/usr" --strip >/dev/null
 # linuxdeploy wants the icon at the AppDir root too, named after the app.
 cp "$ICON" "$APPDIR/mdit.png"
-"$APPDIR/usr/bin/mdit" --version >/dev/null
+QT_QPA_PLATFORM=offscreen "$APPDIR/usr/bin/mdit" --version >/dev/null
 
 # ── 3. Bundle the Wayland platform plugin (+ its runtime libs) ──────────────
 echo "==> Bundling the Wayland platform plugin..."

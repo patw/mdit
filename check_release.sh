@@ -80,7 +80,7 @@ cmake --build build_release_check --parallel "$(nproc 2>/dev/null || echo 4)" >/
 ctest --test-dir build_release_check --output-on-failure >/tmp/mdit_release_ctest.log 2>&1 \
     || { tail -30 /tmp/mdit_release_ctest.log; fail "the test suite is red"; }
 ok "$(grep -c '^[0-9]*-/23' /tmp/mdit_release_ctest.log >/dev/null 2>&1; echo "23 binaries") all green"
-./build_release_check/mdit --version || fail "mdit --version failed"
+QT_QPA_PLATFORM=offscreen ./build_release_check/mdit --version || fail "mdit --version failed"
 rm -rf build_release_check
 
 # ── 6. Nothing that should not be committed ────────────────────────────────

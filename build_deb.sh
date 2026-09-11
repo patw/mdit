@@ -51,11 +51,11 @@ cmake --build "$BUILD_DIR" --parallel "$BUILD_JOBS"
 
 # ── 2. Smoke test the binary before packaging it ────────────────────────────
 echo "==> Smoke testing the binary..."
-if ! "$BUILD_DIR/mdit" --version >/dev/null 2>&1; then
+if ! QT_QPA_PLATFORM=offscreen "$BUILD_DIR/mdit" --version >/dev/null 2>&1; then
     echo "ERROR: build/mdit --version failed (stale or broken build?)" >&2
     exit 1
 fi
-"$BUILD_DIR/mdit" --version
+QT_QPA_PLATFORM=offscreen "$BUILD_DIR/mdit" --version
 
 # ── 3. Assemble the staging tree from `cmake --install` ─────────────────────
 echo "==> Assembling the package staging tree..."
