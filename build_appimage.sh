@@ -71,6 +71,22 @@ for pattern in libQt6WaylandClient.so.6* libwayland-client.so.0* libwayland-curs
     while IFS= read -r f; do cp "$f" "$APPDIR/usr/lib/"; done \
         < <(find /usr/lib/x86_64-linux-gnu -maxdepth 1 -name "$pattern" 2>/dev/null)
 done
+# The offscreen plugin too: tiny, and it lets the published AppImage run headless
+# (containers / CI / `--version` smoke tests) instead of dying on "no platform
+# plugin could be initialized".
+while IFS= read -r f; do cp "$f" "$APPDIR/usr/plugins/platforms/"; done \
+    < <(find "$QT6_PLUGINS/platforms" -maxdepth 1 -name 'libqoffscreen.so' 2>/dev/null)
+# linuxdeploy-plugin-qt otherwise prunes what it did not put there itself. The
+# wayland plugin file names differ by Qt build (one libqwayland.so on Qt 6.10,
+# split libqwayland-{egl,generic}.so on Ubuntu 24.04's 6.4), so glob them — the
+# plugin errors out on a name it cannot find.
+EXTRA_PLATFORM_PLUGINS="libqoffscreen.so"
+for plugin in "$QT6_PLUGINS/platforms"/libqwayland*.so; do
+    [ -e "$plugin" ] || continue
+    EXTRA_PLATFORM_PLUGINS="$EXTRA_PLATFORM_PLUGINS;$(basename "$plugin")"
+done
+export EXTRA_PLATFORM_PLUGINS
+echo "    extra platform plugins: $EXTRA_PLATFORM_PLUGINS"
 
 # ── 4. linuxdeploy (Qt plugin) -> .AppImage ─────────────────────────────────
 echo "==> Bundling with linuxdeploy..."
@@ -88,6 +104,12 @@ ls "$APPDIR"/usr/plugins/platforms/libqwayland*.so >/dev/null 2>&1 \
     || { echo "ERROR: no libqwayland*.so in the AppDir - the AppImage would be xcb-only." >&2; exit 1; }
 ls "$APPDIR"/usr/lib/libQt6WaylandClient.so.6* >/dev/null 2>&1 \
     || { echo "ERROR: libQt6WaylandClient.so.6 missing from the AppDir." >&2; exit 1; }
+
+ls "$APPDIR"/usr/plugins/platforms/libqoffscreen.so >/dev/null 2>&1 \
+    || { echo "ERROR: libqoffscreen.so missing - the AppImage would need a display." >&2; exit 1; }
+
+echo "==> Smoke-testing the finished AppImage (offscreen, no display needed)..."
+APPIMAGE_EXTRACT_AND_RUN=1 QT_QPA_PLATFORM=offscreen "$ROOT/mdit-x86_64.AppImage" --version
 
 echo
 echo "==> Done: mdit-x86_64.AppImage"

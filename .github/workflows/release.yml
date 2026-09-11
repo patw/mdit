@@ -121,7 +121,10 @@ jobs:
       - name: Zip artifacts
         shell: powershell
         run: |
-          Compress-Archive -Path mdit-Windows\* -DestinationPath mdit-${{ github.ref_name }}-Windows.zip
+          # The tag is "v0.1.0" but the artifacts drop the "v" (like the .deb and
+          # the .dmg), so the names stay consistent in the release listing.
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          Compress-Archive -Path mdit-Windows\* -DestinationPath "mdit-$version-Windows.zip"
 
       - name: Upload Windows zip
         uses: softprops/action-gh-release@v2
