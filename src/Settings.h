@@ -13,11 +13,15 @@
 // QStringList. It is GUI-independent (no QWidget) so it is exercised headlessly
 // in `test_settings`.
 //
-// Isolation for tests: the default constructor uses the real user settings
-// under org/app "mdit"/"mdit". To avoid clobbering a user's real settings,
-// a backing QSettings may be supplied (tests point it at a QTemporaryDir with
-// QSettings::IniFormat + QSettings::UserConfig); when one is supplied the real
-// settings are neither read nor written.
+// Isolation for tests, two ways:
+//   * pass a `backing` QSettings — the explicit, per-call seam; and
+//   * set the `MDIT_SETTINGS_INI` environment variable (done by
+//     tests/testmain.h at load time) — the default constructor then uses that
+//     ini FILE instead of the real user settings, on every platform. This second
+//     seam exists because the two-argument QSettings(org, app) constructor
+//     ignores QSettings::setPath: on macOS it always goes through the plist and
+//     on Windows through the registry, so a redirected path table is not enough
+//     to keep a test run out of the user's real config.
 #pragma once
 
 #include <QString>

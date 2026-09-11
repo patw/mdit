@@ -54,8 +54,10 @@ jobs:
 
       - name: Smoke test the binary
         run: |
-          ./build/mdit --version
-          ./build/mdit --help | head -20
+          # No display on a runner: the binary builds a QApplication, so use the
+          # offscreen platform plugin. (Piping into `head` would also SIGPIPE.)
+          QT_QPA_PLATFORM=offscreen ./build/mdit --version
+          QT_QPA_PLATFORM=offscreen ./build/mdit --help
 
   macos:
     name: macOS (build + tests)

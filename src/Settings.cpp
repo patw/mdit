@@ -1,5 +1,6 @@
 #include "Settings.h"
 
+#include <QDir>
 #include <QSettings>
 
 // String keys. Kept in one place so a later key-rename is a single edit.
@@ -15,7 +16,13 @@ Settings::Settings(QSettings *backing)
     : m_owned(nullptr), m_borrowed(backing), m_s(backing)
 {
     if (!m_s) {
-        m_owned = new QSettings(defaultOrganization(), defaultApplication());
+        // Test harness seam (see Settings.h): an explicit ini file instead of the
+        // platform's native store. Empty in production.
+        const QString testIni = qEnvironmentVariable("MDIT_SETTINGS_INI");
+        if (!testIni.isEmpty())
+            m_owned = new QSettings(testIni, QSettings::IniFormat);
+        else
+            m_owned = new QSettings(defaultOrganization(), defaultApplication());
         m_s = m_owned;
     }
 }

@@ -18,6 +18,7 @@
 // still pass their own backing QSettings, as before.
 #pragma once
 
+#include <QFile>
 #include <QFileInfo>
 #include <QSettings>
 #include <QString>
@@ -38,13 +39,17 @@ inline void isolateUserSettings()
     Q_ASSERT(dir.isValid());
     // Belt and braces: redirect the Qt settings path table (verified to work on
     // this Qt) and XDG_CONFIG_HOME for anything else that reads it.
-    // NativeFormat is a plist on macOS and the registry on Windows — neither
-    // honours setPath, so make IniFormat the DEFAULT too: QSettings(org, app)
-    // (what MainWindow uses) then writes an ini file inside the temp dir on
-    // every platform.
+    // The settings path table (helps anything else in the process that uses
+    // QSettings)…
     QSettings::setPath(QSettings::NativeFormat, QSettings::UserScope, dir.path());
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, dir.path());
     QSettings::setDefaultFormat(QSettings::IniFormat);
+    // …and the seam that actually matters: Settings' default constructor uses
+    // this ini FILE when the variable is set. The two-argument
+    // QSettings(org, app) constructor ignores setPath (macOS plist / Windows
+    // registry), so this is what keeps tests out of the real config there.
+    qputenv("MDIT_SETTINGS_INI",
+            QFile::encodeName(dir.path() + QStringLiteral("/mdit-test.ini")));
     isolatedConfigHomeRef() = dir.path();
 }
 

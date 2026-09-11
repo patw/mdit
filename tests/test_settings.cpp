@@ -75,24 +75,36 @@ private slots:
     // nobody picked.) `isolateUserSettings()` runs in main(); this proves it.
     void defaultSettingsAreIsolatedFromTheUserConfig()
     {
-        const QString path = defaultSettingsFilePath();
-        QVERIFY2(!path.isEmpty(), "no settings path resolved");
-        QVERIFY2(path.startsWith(isolatedSettingsDir()),
-                 qPrintable(QStringLiteral("default QSettings is NOT isolated: %1").arg(path)));
-        QVERIFY2(!path.contains(QStringLiteral("/.config/mdit/")),
-                 qPrintable(QStringLiteral("default QSettings points at the user config: %1").arg(path)));
+        // The harness seam is active…
+        QVERIFY2(qEnvironmentVariableIsSet("MDIT_SETTINGS_INI"),
+                 "tests/testmain.h did not install the settings seam");
+        const QString seamPath = qEnvironmentVariable("MDIT_SETTINGS_INI");
+        QVERIFY2(seamPath.startsWith(isolatedConfigHome()),
+                 qPrintable(QStringLiteral("seam outside the temp dir: %1").arg(seamPath)));
 
-        // …and a write through the DEFAULT Settings (no backing) lands in the
-        // temp dir, not in the user's config.
+        // …and it lives in a TEMP dir, never in the user's home config — the real
+        // invariant (~/.config/mdit on Linux, ~/Library/Preferences on macOS, the
+        // registry on Windows). NOTE: the native QSettings path is still
+        // redirected on Linux (native == ini there) but not on macOS/Windows, so
+        // assert the seam's location rather than comparing the two paths.
+        QVERIFY2(seamPath.startsWith(QDir::tempPath()),
+                 qPrintable(QStringLiteral("seam is not in a temp dir: %1").arg(seamPath)));
+        QVERIFY2(!seamPath.startsWith(QDir::homePath() + QStringLiteral("/.config")),
+                 qPrintable(seamPath));
+        QVERIFY2(!seamPath.startsWith(QDir::homePath() + QStringLiteral("/Library")),
+                 qPrintable(seamPath));
+
+        // A write through the DEFAULT Settings (no backing) lands in the seam ini.
         Settings s;
         s.setTheme(Settings::ThemeMode::Dark);
         s.setThemeAccent(QStringLiteral("red"));
         s.setUiScale(110);
         s.sync();
-        QSettings raw(QStringLiteral("mdit"), QStringLiteral("mdit"));
+        QSettings raw(seamPath, QSettings::IniFormat);
         QCOMPARE(raw.value(QStringLiteral("themeAccent")).toString(), QStringLiteral("red"));
-        QVERIFY(raw.fileName().startsWith(isolatedSettingsDir()));
-        // Leave the isolated store on the defaults for any later test.
+        QCOMPARE(raw.value(QStringLiteral("uiScale")).toInt(), 110);
+
+        // Leave the isolated store on the shipped defaults for later tests.
         s.setTheme(Settings::ThemeMode::Light);
         s.setThemeAccent(QStringLiteral("default"));
         s.setUiScale(100);
