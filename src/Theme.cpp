@@ -280,8 +280,17 @@ bool Theme::resolveDark(Settings::ThemeMode mode, bool systemDark)
 
 bool Theme::isSystemDark(QApplication &app)
 {
-    // Qt 6.5+ exposes the platform's colour scheme through QStyleHints.
+    // Qt 6.5+ exposes the platform's colour scheme through QStyleHints. Older Qt
+    // (Ubuntu 24.04 still ships 6.4.2) has neither colorScheme() nor
+    // Qt::ColorScheme, so fall back to the palette's window colour — the same
+    // luma test the accent code uses. Guarded with QT_VERSION_CHECK so both
+    // build cleanly.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     return app.styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+#else
+    Q_UNUSED(app);
+    return qApp ? isDarkColor(qApp->palette().color(QPalette::Window)) : false;
+#endif
 }
 
 // -- UI scaling ---------------------------------------------------------------

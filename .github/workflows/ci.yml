@@ -18,7 +18,7 @@ jobs:
     name: Linux (build + tests)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install dependencies
         run: |
@@ -46,7 +46,7 @@ jobs:
     name: macOS (build + tests)
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install dependencies
         run: |
@@ -54,8 +54,6 @@ jobs:
           brew install qt@6 cmake ninja
 
       - name: Configure
-        env:
-          CMAKE_PREFIX_PATH: ${{ env.Qt6_DIR }}
         run: |
           export CMAKE_PREFIX_PATH="$(brew --prefix qt@6)"
           cmake -S . -B build -G Ninja -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
@@ -70,7 +68,7 @@ jobs:
     name: Windows (build + tests)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4

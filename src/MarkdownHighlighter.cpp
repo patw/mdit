@@ -150,18 +150,18 @@ MarkdownHighlighter::formatsForLine(const QString &line, bool inFence) const
     if (inFence) {
         if (isFenceLine) {
             // Closing delimiter.
-            out.ranges.append({0, line.size(), m_fenceMarkerFormat});
+            out.ranges.append({0, int(line.size()), m_fenceMarkerFormat});
             out.inFenceAfter = false;
             return out;
         }
         // Continuation of the fenced block (no inline rules on it).
-        out.ranges.append({0, line.size(), m_fenceContentFormat});
+        out.ranges.append({0, int(line.size()), m_fenceContentFormat});
         out.inFenceAfter = true;
         return out;
     }
     if (isFenceLine) {
         // Opening delimiter; trailing language tag (```c) is marker too.
-        out.ranges.append({0, line.size(), m_fenceMarkerFormat});
+        out.ranges.append({0, int(line.size()), m_fenceMarkerFormat});
         out.inFenceAfter = true;
         return out;
     }
@@ -182,7 +182,7 @@ MarkdownHighlighter::formatsForLine(const QString &line, bool inFence) const
         if (line.size() > level) {
             const QColor colour = m_themed ? m_accentHeadings[qBound(1, level, 6) - 1]
                                            : headingColor(level, m_dark);
-            out.ranges.append({level, line.size() - level, fmt(colour, true)});
+            out.ranges.append({level, int(line.size() - level), fmt(colour, true)});
         }
     }
 
@@ -191,7 +191,7 @@ MarkdownHighlighter::formatsForLine(const QString &line, bool inFence) const
         QRegularExpressionMatchIterator it = rule.regex.globalMatch(line);
         while (it.hasNext()) {
             const auto m = it.next();
-            out.ranges.append({m.capturedStart(0), m.capturedLength(0), rule.format});
+            out.ranges.append({int(m.capturedStart(0)), int(m.capturedLength(0)), rule.format});
         }
     }
     return out;

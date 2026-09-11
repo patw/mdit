@@ -41,7 +41,7 @@ QVector<MarkdownHeading> MarkdownModel::headings(const QString &text)
         t = t.trimmed();
         if (t.isEmpty())
             continue; // empty headings carry no outline text
-        out.append(MarkdownHeading{m.captured(1).size(), t});
+        out.append(MarkdownHeading{int(m.captured(1).size()), t});
     }
     return out;
 }

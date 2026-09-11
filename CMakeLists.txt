@@ -99,7 +99,12 @@ endif()
 # theme (so a launcher/taskbar shows it) and a .desktop entry next to it.
 # ---------------------------------------------------------------------------
 include(GNUInstallDirs)
-install(TARGETS mdit RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(TARGETS mdit
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        # macOS builds a .app bundle (MACOSX_BUNDLE): CMake refuses to configure
+        # an install(TARGETS) for a bundle without a BUNDLE DESTINATION, even
+        # though our .dmg comes from build_macos.sh rather than `cmake --install`.
+        BUNDLE DESTINATION "${CMAKE_INSTALL_BINDIR}")
 foreach(size IN ITEMS 32 48 64 128 256 512)
     install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/mdit-${size}.png"
             DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${size}x${size}/apps"
