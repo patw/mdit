@@ -15,12 +15,37 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QFileInfo>
+#include <QFileOpenEvent>
 
 #include <cstdio>
 
+class MditApplication final : public QApplication
+{
+public:
+    MditApplication(int &argc, char **argv)
+        : QApplication(argc, argv)
+    {
+    }
+
+    MainWindow *mainWindow = nullptr;
+
+protected:
+    bool event(QEvent *event) override
+    {
+        if (event->type() == QEvent::FileOpen) {
+            auto *openEvent = static_cast<QFileOpenEvent *>(event);
+            if (mainWindow && !openEvent->file().isEmpty()) {
+                mainWindow->openFile(openEvent->file());
+                return true;
+            }
+        }
+        return QApplication::event(event);
+    }
+};
+
 int main(int argc, char *argv[])
 {
-    QApplication app(argc, argv);
+    MditApplication app(argc, argv);
     QCoreApplication::setOrganizationName(QStringLiteral("mdit"));
     QCoreApplication::setApplicationName(AppInfo::name());
     QCoreApplication::setApplicationVersion(AppInfo::version()); // from CMake
@@ -54,6 +79,7 @@ int main(int argc, char *argv[])
     // The MainWindow resolves and applies the persisted theme (auto/light/dark,
     // via Settings) on construction — no hardcoded pre-pass needed here.
     MainWindow window;
+    app.mainWindow = &window;
 
     // Single-file CLI open (subtask 10.1): open the first positional argument
     // that is an existing .md/.markdown file; a missing / non-markdown / absent
