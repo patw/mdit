@@ -13,6 +13,11 @@ void Document::setText(const QString &text)
     m_dirty = true;
 }
 
+void Document::synchronizeText(const QString &text)
+{
+    m_text = text;
+}
+
 void Document::setCurrentFilePath(const QString &path)
 {
     m_path = path;

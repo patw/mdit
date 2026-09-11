@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 # mdit — a fast, pure-Qt6 specialty markdown editor with a live preview.
 # Pure Qt only: no QtWebEngine, no QtMultimedia, no external markdown library.
 project(mdit
-    VERSION 0.1.0
+    VERSION 0.1.1
     DESCRIPTION "A fast, pure-Qt6 specialty markdown editor with a live preview."
     LANGUAGES CXX)
 

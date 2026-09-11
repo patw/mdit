@@ -238,7 +238,7 @@ public:
     QAction *redoAction() const { return m_redoAct; }
 
     // --- Live preview (subtask 4.2). ---------------------------------------
-    // Re-render the preview from the current document NOW (via the shared
+    // Re-render the preview from a fresh editor snapshot NOW (via the shared
     // RenderedDocument renderer): the base URL is derived from the document's
     // current file path (so relative images resolve against its directory) and
     // the theme follows the current light/dark state. A no-op when the preview
@@ -256,10 +256,9 @@ public:
     // their text headlessly.
     QLabel *statusCountsLabel() const { return m_countsLabel; }
     QLabel *statusModifiedLabel() const { return m_modifiedLabel; }
-    // Refresh the word/char count label from the editor (wordCount()/charCount
-    // == the MarkdownModel canonical counts). Driven by the live-preview
-    // debounce (onPreviewTimerTimeout) and by open/new so it never goes stale;
-    // public so a test can force an immediate refresh.
+    // Refresh the word/char count label from one editor snapshot. Driven by the
+    // live-preview debounce and by open/new so it never goes stale; public so a
+    // test can force an immediate refresh.
     void refreshStatusCounts();
     // (Re)set the modified indicator from the document's dirty flag. O(1) — it
     // is refreshed on every dirty-affecting change (via updateTitle()) so it is
@@ -316,9 +315,17 @@ private:
     void buildUi();
     void updateTitle();
     void showStatus(const QString &msg);
-    // Refresh the find bar's match count in place (on editor textChanged) — the
-    // bar stays visible while the user edits; this never moves the selection.
+    // Refresh the find bar's match count in place only while a non-empty Find
+    // query is visible; this never moves the selection.
     void refreshFindBarCount();
+    // Take one full editor-text snapshot and synchronize the file model to it.
+    // This is intentionally called at debounce/save/export boundaries, never on
+    // each keystroke.
+    QString syncDocumentFromEditor();
+    // Update counts and preview from the same already-captured snapshot, so a
+    // debounce performs one editor-text materialization rather than several.
+    void refreshStatusCounts(const QString &text);
+    void updateLivePreview(const QString &text);
     // Re-derive the Undo/Redo actions' enabled state from the editor's undo
     // stack (called on construction, on undoAvailable/redoAvailable, and after
     // each undo/redo).
@@ -335,8 +342,8 @@ private:
     void updateThemeButton();
     // Reset to untitled WITHOUT the dirty guard (the caller has already asked).
     void newDocumentNoGuard();
-    // (Re)schedule the debounced live-preview render; a no-op when the preview
-    // is hidden (the spec: only render while the pane is visible).
+    // (Re)schedule the debounced count refresh and live-preview render. The
+    // preview remains visibility-guarded, but counts update while it is hidden.
     void schedulePreviewUpdate();
     // Persist the current splitter ratio through Settings (splitterMoved +
     // setSplitterRatio both funnel here).
@@ -408,9 +415,9 @@ protected:
     Document m_doc;      // owns content, path and dirty flag
     bool m_updating = false; // true while we programmatically set editor text
 
-    // Live-preview debounce (subtask 4.2): a singleShot QTimer restarted on each
-    // editor change; on timeout the elapsed time is run through the pure
-    // PreviewDebouncer policy and the preview renders (only if visible).
+    // Live-preview debounce: a singleShot QTimer restarted on each editor
+    // change; on timeout one editor snapshot updates the file model, counts,
+    // and (only if visible) the preview.
     QTimer *m_previewTimer = nullptr;
     QElapsedTimer m_editClock;
     int m_debounceMs = PreviewDebouncer::defaultIntervalMs();

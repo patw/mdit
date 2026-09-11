@@ -139,7 +139,7 @@ void TestAbout::mainWindowShowsOneReusableCenteredDialog()
 // not a second hardcoded literal.
 void TestAbout::versionComesFromTheBuild()
 {
-    QCOMPARE(AppInfo::version(), QStringLiteral("0.1.0"));
+    QCOMPARE(AppInfo::version(), QStringLiteral(MDIT_VERSION));
     QVERIFY(!AppInfo::name().isEmpty());
     QVERIFY(AppInfo::copyrightLine().contains(QStringLiteral("Pat Wendorf")));
 }

@@ -116,6 +116,7 @@ private slots:
     // --- Subtask 8.2: status-bar word/char counts + modified indicator. ----
     void statusBarCountsAndModifiedInitially();
     void countsRefreshOnDebounce_notPerKeystroke();
+    void documentTextSynchronizesOnDebounce_notPerKeystroke();
     void countsUpdateWhilePreviewHidden();
     void countsAfterOpenFile_immediate();
     void countsPluralization();
@@ -505,6 +506,27 @@ void TestMainWindow::countsRefreshOnDebounce_notPerKeystroke()
                                      .arg(w.editorPane()->wordCount())
                                      .arg(w.editorPane()->charCount());
         QCOMPARE(w.statusCountsLabel()->text(), expected);
+    }
+}
+
+// Editing marks the document dirty immediately, but defers copying the entire
+// editor buffer into the file model until the same debounce that updates the
+// preview and counts. This keeps the per-keystroke path constant-time.
+void TestMainWindow::documentTextSynchronizesOnDebounce_notPerKeystroke()
+{
+    const QTemporaryDir dir;
+    QSettings ini = tempSettings(dir.path(), QStringLiteral("sb-sync.ini"));
+    {
+        MainWindow w(nullptr, &ini);
+        w.setPreviewDebounceMs(20);
+        QCOMPARE(w.document()->text(), QString());
+
+        w.editorPane()->setPlainText(QStringLiteral("deferred source snapshot"));
+        QVERIFY(w.dirty());
+        QCOMPARE(w.document()->text(), QString());
+
+        QTest::qWait(120);
+        QCOMPARE(w.document()->text(), QStringLiteral("deferred source snapshot"));
     }
 }
 

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-11
+
+### Performance
+- **Snappier editing on large documents** (`src/MainWindow.{h,cpp}`,
+  `src/Document.{h,cpp}`, `src/FindBar.*`) — mdit no longer copies the full
+  editor buffer into its file model on every keystroke. A single deferred
+  snapshot now supplies document synchronization, word/character counts, and
+  the live preview after the typing debounce. The closed Find dialog also no
+  longer scans the document after every edit; it refreshes only while visible
+  with an active query. These changes reduce main-thread work during normal
+  typing while preserving immediate dirty-state feedback and the existing live
+  preview behavior.
+
+
 ### Fixed
 - **Packaging smoke tests on a headless machine** (`build_deb.sh`,
   `build_appimage.sh`, `build_macos.sh`, `check_release.sh`) — `mdit --version`

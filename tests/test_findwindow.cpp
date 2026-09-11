@@ -61,6 +61,7 @@ private slots:
     void ctrlHShowsTheReplaceRow_andStaysCentered();
     void titleNamesTheMode();
     void escClosesThePopupAndReturnsFocusToTheEditor();
+    void hiddenFindDialogDoesNotRecountOnEditorChanges();
     void findAndReplaceStillDriveTheEditor();
 };
 
@@ -178,6 +179,28 @@ void TestFindWindow::escClosesThePopupAndReturnsFocusToTheEditor()
     // document (QWidget::focusWidget() is the window-local answer and is valid
     // headlessly, where an offscreen window is never "active").
     QCOMPARE(w.focusWidget(), static_cast<QWidget *>(w.editorPane()));
+}
+
+// A hidden Find dialog must not rescan a document on every editor change. The
+// stale label proves MainWindow did not call refreshCount(); opening the dialog
+// again performs the normal fresh search/count.
+void TestFindWindow::hiddenFindDialogDoesNotRecountOnEditorChanges()
+{
+    MainWindow w;
+    EditorPane *editor = w.editorPane();
+    editor->setPlainText(QStringLiteral("cat"));
+    w.showFindBar();
+    FindBar *bar = w.findBar();
+    bar->setQuery(QStringLiteral("cat"));
+    QCOMPARE(bar->matchLabel(), QStringLiteral("1 of 1"));
+
+    bar->closeFindBar();
+    QVERIFY(!bar->isVisible());
+    editor->setPlainText(QStringLiteral("dog"));
+    QCOMPARE(bar->matchLabel(), QStringLiteral("1 of 1"));
+
+    w.showFindBar();
+    QCOMPARE(bar->matchLabel(), QStringLiteral("no matches"));
 }
 
 // The popup still drives the (unchanged) editor search helpers end to end.

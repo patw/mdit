@@ -706,14 +706,20 @@ void MainWindow::updateTitle()
 
 void MainWindow::refreshStatusCounts()
 {
-    // Word/char readout from the editor (== the MarkdownModel canonical counts).
-    // Deliberately deferred to the debounce / open / new rather than run on
-    // every keystroke — counting a large file is O(n) work the spec keeps off
-    // the per-keystroke path.
+    // The public immediate-refresh seam (used after open/new and by tests).
+    // Capture once, then delegate to the snapshot overload so word and character
+    // counts never each materialize their own full copy of the editor text.
+    refreshStatusCounts(m_editor->toPlainText());
+}
+
+void MainWindow::refreshStatusCounts(const QString &text)
+{
+    // One O(n) pass over the already-captured snapshot. QString::size() is O(1),
+    // so character count costs no second document traversal or text copy.
     if (!m_countsLabel)
         return;
-    const int words = m_editor->wordCount();
-    const int chars = m_editor->charCount();
+    const int words = MarkdownModel::wordCount(text);
+    const int chars = MarkdownModel::charCount(text);
     m_countsLabel->setText(
         QStringLiteral("%1 %2, %3 %4")
             .arg(words)
@@ -733,16 +739,13 @@ void MainWindow::onEditorTextChanged()
 {
     if (m_updating)
         return; // programmatic update (open/new) — the model already holds the text
-    m_doc.setText(m_editor->toPlainText()); // marks dirty only when it changed
-    // An undo/redo that lands exactly on the last clean checkpoint (the loaded
-    // file / the last save) is not a modification any more: mirror the editor
-    // document's modified flag so the title's '*' and the status-bar indicator
-    // go back to clean. A redo past the checkpoint leaves it modified, which the
-    // setText() above already recorded as dirty.
-    if (m_doc.dirty() && !m_editor->isModified())
-        m_doc.setDirty(false);
+
+    // Do NOT copy the whole editor into Document for every keystroke. The model
+    // only needs its dirty state here; the debounced preview/count path and
+    // save/export paths synchronize the actual text when they need a snapshot.
+    m_doc.setDirty(m_editor->isModified());
     updateTitle();
-    schedulePreviewUpdate(); // debounced live-preview re-render (only if visible)
+    schedulePreviewUpdate();
 }
 
 void MainWindow::schedulePreviewUpdate()
@@ -759,23 +762,42 @@ void MainWindow::schedulePreviewUpdate()
 
 void MainWindow::onPreviewTimerTimeout()
 {
-    // The status-bar word/char readout refreshes on the debounce (spec §3:
-    // "Word/char counts in the status bar update on the same debounce"),
-    // whether or not the preview is visible — the render below is the guarded
-    // part, not the count.
-    refreshStatusCounts();
+    // Capture the editor once after the user pauses. That one snapshot feeds the
+    // file model, word/character count, and (when visible) Markdown renderer.
+    const QString text = syncDocumentFromEditor();
+    refreshStatusCounts(text);
     // Run the elapsed time through the pure policy so the render decision is
     // testable logic, not an opaque timer. A singleShot restarted on each change
     // always fires at/after the interval, so renderNeeded is true here.
     const PreviewDebouncer::Decision d =
         PreviewDebouncer::evaluate(m_editClock.elapsed(), m_debounceMs);
     if (d.renderNeeded)
-        updateLivePreview(); // no-op while the pane is hidden (guarded inside)
+        updateLivePreview(text); // no-op while the pane is hidden (guarded inside)
     else // belt & braces: re-arm for the remaining wait (never hit in practice)
         m_previewTimer->start(d.waitMs);
 }
 
+QString MainWindow::syncDocumentFromEditor()
+{
+    const QString text = m_editor->toPlainText();
+    // Keep the model's snapshot sharing this QString, without a second full-text
+    // equality comparison. QTextDocument remains the live editing authority.
+    m_doc.synchronizeText(text);
+    // QTextDocument tracks its clean undo checkpoint, which is authoritative for
+    // the dirty state when an undo returns to a saved/loaded version.
+    m_doc.setDirty(m_editor->isModified());
+    return text;
+}
+
 void MainWindow::updateLivePreview()
+{
+    // Avoid even taking a full editor snapshot while the preview is hidden.
+    if (!isPreviewVisible())
+        return;
+    updateLivePreview(syncDocumentFromEditor());
+}
+
+void MainWindow::updateLivePreview(const QString &text)
 {
     if (!isPreviewVisible())
         return;
@@ -787,7 +809,7 @@ void MainWindow::updateLivePreview()
     if (!path.isEmpty())
         base = QUrl::fromLocalFile(QFileInfo(path).absolutePath() + QStringLiteral("/"));
     m_preview->setBaseUrl(base);
-    m_preview->setRendered(m_doc.text(), base, m_theme);
+    m_preview->setRendered(text, base, m_theme);
 }
 
 void MainWindow::setPreviewDebounceMs(int ms)
@@ -961,9 +983,11 @@ void MainWindow::showFindBar()
 
 void MainWindow::refreshFindBarCount()
 {
-    // Keep the find bar's count current while the user edits with it open. This
-    // is count-only — it never moves the editor selection or steals focus — so
-    // it is safe to run on every editor textChanged.
+    // A full match recount copies and scans the document. It is useful only for
+    // an on-screen, non-empty query; when Find is closed, skip it entirely so
+    // ordinary typing never pays search-dialog work.
+    if (!m_findBar || !m_findBar->isVisible() || m_findBar->currentQuery().isEmpty())
+        return;
     m_findBar->refreshCount();
 }
 

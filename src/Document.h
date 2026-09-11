@@ -20,6 +20,10 @@ public:
     // Replace the whole content. Marks the document dirty if it actually
     // changed.
     void setText(const QString &text);
+    // Replace the model snapshot without changing the dirty state. MainWindow
+    // uses this after its debounce/save/export boundary: QString assignment is
+    // implicitly shared, avoiding an O(n) equality comparison after every edit.
+    void synchronizeText(const QString &text);
 
     // -- file path / dirty ------------------------------------------------
     QString currentFilePath() const { return m_path; }

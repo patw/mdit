@@ -23,7 +23,7 @@ echo "========================================="
 # ── 1. Version consistency ──────────────────────────────────────────────────
 echo "--- Version ---"
 # mdit's project() call spans several lines; handle both layouts.
-CMAKE_VER="$(grep -A5 -m1 '^project(' CMakeLists.txt | tr '\n' ' ' | sed -n 's/.*VERSION[[:space:]]\+\([0-9][^ )]*\).*/\1/p')"
+CMAKE_VER="$(grep -A5 -m1 '^project(' CMakeLists.txt | tr '\n' ' ' | sed -n 's/.*VERSION[[:space:]]*\([0-9][^ )]*\).*/\1/p')"
 [ -n "$CMAKE_VER" ] || fail "could not parse project(... VERSION ...) from CMakeLists.txt"
 ok "CMakeLists.txt version: $CMAKE_VER (single source of truth; AppInfo::version() compiles it in)"
 TAG="${1:-}"
@@ -80,7 +80,11 @@ cmake --build build_release_check --parallel "$(nproc 2>/dev/null || echo 4)" >/
 ctest --test-dir build_release_check --output-on-failure >/tmp/mdit_release_ctest.log 2>&1 \
     || { tail -30 /tmp/mdit_release_ctest.log; fail "the test suite is red"; }
 ok "$(grep -c '^[0-9]*-/23' /tmp/mdit_release_ctest.log >/dev/null 2>&1; echo "23 binaries") all green"
-QT_QPA_PLATFORM=offscreen ./build_release_check/mdit --version || fail "mdit --version failed"
+APP_BIN="./build_release_check/mdit"
+if [ ! -x "$APP_BIN" ] && [ -x "./build_release_check/mdit.app/Contents/MacOS/mdit" ]; then
+    APP_BIN="./build_release_check/mdit.app/Contents/MacOS/mdit"
+fi
+QT_QPA_PLATFORM=offscreen "$APP_BIN" --version || fail "mdit --version failed"
 rm -rf build_release_check
 
 # ── 6. Nothing that should not be committed ────────────────────────────────
