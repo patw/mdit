@@ -1,0 +1,98 @@
+# mdit CI — build + run the full CTest suite on all three desktop platforms.
+#
+# Adapted from PengyCPP's .github/workflows/ci.yml. mdit is a pure-Qt6 CMake
+# project, so each job is: install Qt6 + CMake, configure with -DBUILD_TESTS=ON,
+# build, then `ctest --output-on-failure` (the suite runs headless under the Qt
+# offscreen platform plugin, so no display is needed on any runner).
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: Linux (build + tests)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential cmake ninja-build \
+            qt6-base-dev qt6-base-dev-tools libgl-dev \
+            xvfb
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Smoke test the binary
+        run: |
+          ./build/mdit --version
+          ./build/mdit --help | head -20
+
+  macos:
+    name: macOS (build + tests)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
+          brew install qt@6 cmake ninja
+
+      - name: Configure
+        env:
+          CMAKE_PREFIX_PATH: ${{ env.Qt6_DIR }}
+        run: |
+          export CMAKE_PREFIX_PATH="$(brew --prefix qt@6)"
+          cmake -S . -B build -G Ninja -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  windows:
+    name: Windows (build + tests)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure
+        shell: cmd
+        run: |
+          if "%QT_ROOT_DIR%"=="" exit /b 1
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON -DCMAKE_PREFIX_PATH="%QT_ROOT_DIR%"
+
+      - name: Build
+        shell: cmd
+        run: cmake --build build --parallel
+
+      - name: Test
+        shell: cmd
+        run: ctest --test-dir build --output-on-failure

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=mdit
+GenericName=Markdown Editor
+Comment=A fast, pure-Qt6 specialty markdown editor with a live preview
+Exec=mdit %F
+Icon=mdit
+StartupWMClass=mdit
+Terminal=false
+Categories=Utility;TextEditor;
+MimeType=text/markdown;
+Keywords=markdown;md;markdown-editor;text;editor;
+StartupNotify=true

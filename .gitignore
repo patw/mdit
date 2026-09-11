@@ -1,0 +1,61 @@
+# Build artifacts (CMake + Ninja + Make)
+build/
+build-*/
+cmake-build-*/
+CMakeUserPresets.json
+
+# CMake / Qt cruft
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+CTestTestfile.cmake
+cmake_install.cmake
+*.cmake
+_install/
+compile_commands.json
+.cache/
+*.user
+.qmake.stash
+.ninja_*
+.ninja_deps
+.ninja_log
+
+# Compiler objects / intermediates
+*.o
+*.obj
+*.so
+*.so.*
+*.dll
+*.dylib
+*.a
+*.lib
+*.pdb
+*.exe
+
+# Export artifacts (HTML / PDF produced by the app or its tests)
+*.html
+*.pdf
+
+# IDE / editor cruft
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Python (pytest shim)
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Release artifacts + packaging scratch (build_*.sh outputs)
+*.deb
+*.AppImage
+*.dmg
+*.zip
+.deb_staging/
+appimage/tools/
+appimage/mdit.AppDir/
+build_*/
+mdit-Windows/
+squashfs-root/

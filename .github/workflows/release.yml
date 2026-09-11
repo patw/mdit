@@ -1,0 +1,131 @@
+# Build mdit release artifacts on version tags.
+#
+# Produces and attaches to a GitHub Release:
+#   Linux:   mdit_<version>_amd64.deb + mdit-x86_64.AppImage
+#   macOS:   mdit-<version>-macOS.dmg
+#   Windows: mdit-<version>-Windows.zip (Qt DLLs bundled by windeployqt)
+#
+# Usage:  git tag v0.2.0 && git push --tags
+# (build_deb.sh strips the leading "v" itself — dpkg requires a digit-first
+#  version; that outage is why the strip lives in the script, not here.)
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g. v0.2.0)'
+        required: false
+
+env:
+  VERSION: ${{ github.ref_name }}
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    name: Linux (.deb + AppImage)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential cmake ninja-build \
+            qt6-base-dev qt6-base-dev-tools qt6-wayland \
+            libgl-dev dpkg-dev imagemagick wget file
+
+      - name: Build .deb
+        run: ./build_deb.sh
+
+      - name: Build AppImage
+        run: |
+          mkdir -p appimage/tools
+          wget -q -P appimage/tools \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget -q -P appimage/tools \
+            https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x appimage/tools/*.AppImage
+          ./build_appimage.sh
+
+      - name: Verify the .deb is well formed
+        run: |
+          dpkg-deb --info mdit_*_amd64.deb
+          dpkg-deb --contents mdit_*_amd64.deb
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            mdit_*.deb
+            mdit-x86_64.AppImage
+          generate_release_notes: true
+          fail_on_unmatched_files: false
+
+  macos:
+    name: macOS (.dmg)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
+          brew install qt@6 cmake ninja
+
+      - name: Build .dmg
+        run: ./build_macos.sh
+
+      - name: Upload DMG
+        uses: softprops/action-gh-release@v2
+        with:
+          files: mdit-*-macOS.dmg
+          generate_release_notes: true
+          fail_on_unmatched_files: false
+
+  windows:
+    name: Windows (.zip)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build + bundle
+        shell: cmd
+        run: |
+          where cl.exe
+          if "%QT_ROOT_DIR%"=="" exit /b 1
+          cmake -S . -B build_windows -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%QT_ROOT_DIR%"
+          cmake --build build_windows --parallel
+          mkdir mdit-Windows
+          copy build_windows\mdit.exe mdit-Windows\
+          cd mdit-Windows
+          windeployqt mdit.exe
+
+      - name: Zip artifacts
+        shell: powershell
+        run: |
+          Compress-Archive -Path mdit-Windows\* -DestinationPath mdit-${{ github.ref_name }}-Windows.zip
+
+      - name: Upload Windows zip
+        uses: softprops/action-gh-release@v2
+        with:
+          files: mdit-*-Windows.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: false

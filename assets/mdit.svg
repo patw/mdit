@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"
+     viewBox="0 0 512 512">
+  <title>mdit</title>
+  <circle cx="256.00" cy="256.00" r="249.45" fill="#ffffff"/>
+  <g fill="#151515">
+    <rect x="209.70" y="117.76" width="28.37" height="276.48" rx="14.71" ry="14.71"/>
+    <rect x="273.93" y="117.76" width="28.37" height="276.48" rx="14.71" ry="14.71"/>
+    <rect x="112.64" y="204.49" width="286.72" height="28.37" rx="14.71" ry="14.71"/>
+    <rect x="112.64" y="279.14" width="286.72" height="28.37" rx="14.71" ry="14.71"/>
+  </g>
+</svg>

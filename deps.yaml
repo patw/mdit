@@ -1,0 +1,20 @@
+# deps.yaml — mdit build/runtime dependencies for the Ralph loop host.
+# `apt:` items must be installed (root) before this task becomes schedulable;
+# the loop's agents are headless and cannot sudo.
+
+bins:
+  - cmake
+  - ninja
+  - g++
+  - qmake6
+  - grep
+
+apt:
+  # Qt6 base build stack (Widgets, Gui, PrintSupport; NO WebEngine, NO Multimedia)
+  - qt6-base-dev
+  - qt6-base-dev-tools
+  - qt6-tools-dev
+  - ninja-build
+  - build-essential
+  - cmake
+  # QtTest is part of qt6-base-dev; nothing extra needed for testing.
