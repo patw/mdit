@@ -80,3 +80,8 @@
 ## 16. Post-loop fix (settings isolation + shipped defaults)
 - [x] Tests can no longer touch the user's config: `tests/testmain.h` redirects the Qt settings path into a temp dir at load time (`isolateUserSettings()` + an auto-invoked static), applied to every widget test, with a `test_settings` guard asserting the default settings path is not `~/.config/mdit/mdit.conf`. (The theme suite had been writing `theme=dark`/`themeAccent=red`/`uiScale=110` there, which looked like the app "resetting" to a red theme.)
 - [x] Shipped defaults are **Light + Default accent + 100% UI scale** (System/auto is opt-in).
+
+## 17. Published (repo + CI/CD green on three platforms)
+- [x] `github.com/patw/mdit` created with `gh repo create` (public, described, 8 topics, homepage catbee.ca), `main` pushed, tagged `v0.1.0`.
+- [x] CI green on Linux (Qt 6.4.2), macOS and Windows after fixing: Qt < 6.5 `QStyleHints::colorScheme`, MSVC `qsizetype`->`int` narrowing, `M_PI` on MSVC, the macOS `install(TARGETS)` BUNDLE DESTINATION, platform-dependent key-sequence lookups (actions now carry object names), `QIODevice::Text` CRLF translation in a fixture, and the settings isolation (the 2-arg `QSettings` ctor ignores `setPath` on macOS/Windows — hence the `MDIT_SETTINGS_INI` seam).
+- [x] Release `v0.1.0` built by Actions with all four artifacts: `mdit_0.1.0_amd64.deb`, `mdit-x86_64.AppImage`, `mdit-0.1.0-macOS.dmg`, `mdit-0.1.0-Windows.zip`; verified by downloading them back (the .deb's desktop entry/icons resolve, the AppImage runs headless).

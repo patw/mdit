@@ -517,3 +517,45 @@ and adapted them to mdit. The reusable lessons:
 - **Cleanup done for the user:** removed the polluted `theme`/`themeAccent`/
   `uiScale`/`recentFiles` keys from their `~/.config/mdit/mdit.conf` (backup at
   /tmp/mdit_conf_backup_before_cleanup.conf) so the next launch is light/Default/100%.
+
+## Publishing (2026-09-11) — github.com/patw/mdit + first release
+`gh repo create mdit --public --source=. --remote=origin --push` (logged in as
+**patw**, SSH; all their repos are public, descriptions are one-line technical
+summaries), topics + homepage via `gh repo edit`, then `git tag v0.1.0 &&
+git push origin v0.1.0` to fire the release workflow. Both workflow runs and the
+published artifacts were verified by downloading them back.
+
+**The CI/CD lessons — every one of these only shows up OFF the dev box:**
+1. **Qt version floor:** `QStyleHints::colorScheme()`/`Qt::ColorScheme` are Qt
+   6.5+; Ubuntu 24.04 ships **6.4.2**. Guard with `QT_VERSION_CHECK` and fall
+   back to the palette's window colour.
+2. **MSVC is stricter than GCC/Clang:** implicit `qsizetype`→`int` narrowing in
+   brace init is an *error* (C2397), and `M_PI` does not exist without
+   `_USE_MATH_DEFINES`. Cast explicitly / carry your own `kPi`.
+3. **macOS:** `install(TARGETS ...)` needs a **BUNDLE DESTINATION** for a
+   `MACOSX_BUNDLE` target or *configure* fails (before any build).
+4. **Standard key sequences are not portable:** on a bare CI runner
+   `QKeySequence::Quit` comes out **empty**, so a test that finds an action by
+   shortcut matches an arbitrary shortcut-less action. Actions now carry stable
+   `setObjectName()`s (`action.save`, `action.exit`, `menu.file`, …) and tests
+   look them up by name. Also: `QIODevice::Text` translates `\n`→`\r\n` on
+   Windows, which mangled a CRLF test fixture (write fixtures in binary mode).
+5. **The 2-argument `QSettings(organization, application)` constructor always
+   uses NativeFormat** — a plist on macOS, the registry on Windows — and neither
+   honours `QSettings::setPath`. Redirecting the path table therefore only ever
+   isolated *Linux* tests. Fix: `Settings` honours a `MDIT_SETTINGS_INI` env var
+   (set by `tests/testmain.h`) and then uses that explicit ini FILE, so the
+   seam is portable.
+6. **A headless runner has no display:** any invocation of the GUI binary needs
+   `QT_QPA_PLATFORM=offscreen` — that includes the packaging scripts' smoke
+   tests (`mdit --version` core-dumped inside `build_deb.sh` and failed the
+   release) and never pipe into `head` (SIGPIPE).
+7. **linuxdeploy-plugin-qt** prunes plugins it did not add itself; bundle extra
+   ones via `EXTRA_PLATFORM_PLUGINS`, computed from a **glob** — the wayland
+   plugin is `libqwayland.so` on Qt 6.10 but `libqwayland-{egl,generic}.so` on
+   Ubuntu 24.04's Qt 6.4, and naming a missing file makes the plugin exit 1.
+   Adding `libqoffscreen.so` also makes the published AppImage runnable
+   headlessly, which is exactly how CI smoke-tests it now.
+8. **Artifact naming:** keep the tag's `v` out of the file names (the `.deb`'s
+   `Version:` field must start with a digit anyway) so the release listing is
+   consistent.

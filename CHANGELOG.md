@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Packaging smoke tests on a headless machine** (`build_deb.sh`,
+  `build_appimage.sh`, `build_macos.sh`, `check_release.sh`) — `mdit --version`
+  aborts without a display (the binary builds a QApplication), which failed the
+  first release run; they now run with `QT_QPA_PLATFORM=offscreen`.
+- **The AppImage now bundles the offscreen platform plugin** and is *smoke-tested
+  as built* (`APPIMAGE_EXTRACT_AND_RUN=1 QT_QPA_PLATFORM=offscreen ./mdit-x86_64.AppImage --version`),
+  so the published AppImage also runs on headless machines/in containers.
+  `EXTRA_PLATFORM_PLUGINS` is computed from what exists, because the wayland
+  plugin is one file on Qt 6.10 and split into `-egl`/`-generic` on Ubuntu 24.04
+  (naming a missing one makes linuxdeploy-plugin-qt fail).
+- **Consistent release asset names** — the Windows zip drops the tag's leading
+  `v`, matching the `.deb`, `.dmg` and `.AppImage` names.
+
 ### Added
 - **A screenshot in the README** (`assets/screenshots/mdit-split-view.png`,
   1840x1040) — mdit editing its own `README.md`, showing the split view
