@@ -80,7 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   consistency (optionally against the tag), icon sizes, packaging inputs, the
   docs contract, a clean Release build with the suite green.
   Verified locally, not just in CI: the `.deb` was built and unpacked into a temp
-  root — `desktop-file-validate` passes, `xdg-mime` finds the entry, and GTK's
+  root — `desktop-file-validate` passes, the entry is registered as a
+  `text/markdown` handler (`gio mime`), and GTK's
   own icon lookup (what the GNOME dock uses) resolves `mdit` to the packaged
   `usr/share/icons/hicolor/<size>/apps/mdit.png`; the AppImage was built with
   linuxdeploy and run (`mdit 0.1.0`, `--help`), with the wayland + xcb plugins
@@ -201,7 +202,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `cmake --install --prefix ~/.local` puts `mdit` on PATH plus the hicolor icons
   and the desktop entry in place (verified: GTK's icon lookup resolves `mdit` to
   `~/.local/share/icons/hicolor/48x48/apps/mdit.png`, and `mdit.desktop` is
-  registered — and now the default — handler for `text/markdown`).
+  registered as a `text/markdown` handler). Registering a handler is all the
+  install does — it never sets a *default*; the desktop decides. On GNOME/GLib
+  with no prior user choice that lands on mdit (the only exact-type handler,
+  beating the `text/plain` fallback Text Editor wins by); KDE leaves it to File
+  Associations.
 
 ## [0.1.0] - 2026-09-10
 

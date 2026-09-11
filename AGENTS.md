@@ -374,7 +374,7 @@ the canonical iteration point from here on. Work done in this phase:
 - **Verification recipe without a live session** (useful again later):
   `update-desktop-database ~/.local/share/applications` +
   `gtk-update-icon-cache -f -t ~/.local/share/icons/hicolor`, then
-  `xdg-mime query default text/markdown` (now `mdit.desktop`) and a tiny
+  `gio mime text/markdown` (lists `mdit.desktop` as the handler / default) and a tiny
   python3-gi GTK4 probe: `Gtk.IconTheme.new().set_theme_name("hicolor")` +
   `lookup_icon("mdit", None, 48, 1, Gtk.TextDirection.NONE, Gtk.IconFlags(0))`
   -> prints the resolved PNG path. (`QIcon::fromTheme()` is NOT a valid check
@@ -484,8 +484,11 @@ and adapted them to mdit. The reusable lessons:
   (`dpkg-deb -x pkg.deb /tmp/root`) and run the GTK lookup with
   `XDG_DATA_HOME=/tmp/no-home XDG_DATA_DIRS=/tmp/root/usr/share:/usr/share` —
   XDG_DATA_HOME defaults to ~/.local/share and would otherwise shadow the
-  packaged icon (it did on the first run!). `xdg-mime query default
-  text/markdown` (same env) proves the entry is registered.
+  packaged icon (it did on the first run!). Check registration with
+  `grep text/markdown /tmp/root/usr/share/applications/mimeinfo.cache` or
+  `gio mime text/markdown` — NOT `xdg-mime query default`, whose generic
+  fallback returns the first cache entry regardless of the real default (and
+  GLib ignores a `.desktop` whose `Exec` binary is not on PATH).
 - AppImages need FUSE: `APPIMAGE_EXTRACT_AND_RUN=1 ./linuxdeploy-x86_64.AppImage`
   works on a box without libfuse2 (both for building and for running the result).
 
